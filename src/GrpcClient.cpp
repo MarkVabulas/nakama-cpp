@@ -745,9 +745,13 @@ void GrpcClient::linkSteam(
     ctx->successCallback = successCallback;
     ctx->errorCallback = errorCallback;
 
-    nakama::api::AccountSteam req;
+    nakama::api::AccountSteam account;
+    account.set_token(token);
 
-    req.set_token(token);
+    nakama::api::LinkSteamRequest req;
+
+    // This might cause crashes if it's expecting more than a local temporary variable to persist
+    req.set_allocated_account(&account);
 
     auto responseReader = _stub->AsyncLinkSteam(&ctx->context, req, &_cq);
 

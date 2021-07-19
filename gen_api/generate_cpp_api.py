@@ -44,32 +44,21 @@ def getArgOrEnvVar(env_var_name, arg_value):
 
     return value
 
-# https://github.com/heroiclabs/nakama
-NAKAMA = getArgOrEnvVar('NAKAMA', args.nakama)
-
-# https://github.com/grpc-ecosystem/grpc-gateway
-GRPC_GATEWAY = getArgOrEnvVar('GRPC_GATEWAY', args.gateway)
-
 def path(p):
     return os.path.normpath(p)
 
-def get_host_arch():
-    import platform
-    bits, _ = platform.architecture()
-    if bits == '64bit':
-        arch = 'x64'
-    elif bits == '32bit':
-        arch = 'x86'
-    else:
-        arch = bits
-    return arch
+# https://github.com/heroiclabs/nakama
+NAKAMA          = os.path.abspath('../../nakama')
 
-NAKAMA_CPP      = os.path.abspath('./..')
-GRPC            = path(NAKAMA_CPP + '/third_party/grpc')
-GOOGLEAPIS      = path(GRPC_GATEWAY + '/third_party/googleapis')
-PROTOBUF_SRC    = path(GRPC + '/third_party/protobuf/src')
+# https://github.com/grpc-ecosystem/grpc-gateway
+GRPC_GATEWAY    = path('../third_party/grpc-gateway')
+
+NAKAMA_CPP      = os.path.abspath('d:/libs/nakama-cpp')
+GRPC            = path('../third_party/grpc')
+GOOGLEAPIS      = path('../third_party/grpc/third_party/googleapis')
+PROTOBUF_SRC    = path('../third_party/grpc/third_party/protobuf/src')
 OUT             = os.path.abspath('cppout')
-API_DESTINATION = os.path.abspath('./../src/api')
+API_DESTINATION = os.path.abspath('./src/api')
 
 is_windows = platform.system() == 'Windows'
 is_mac     = platform.system() == 'Darwin'
@@ -87,13 +76,13 @@ else:
 
 def find_grpc_cpp_plugin():
     if is_windows:
-        grpc_cpp_plugin = path(build_dir + '/third_party/grpc/Debug/grpc_cpp_plugin.exe')
+        grpc_cpp_plugin = path(os.path.abspath('.') + '/gen_api/grpc_cpp_plugin.exe')
         if not os.path.exists(grpc_cpp_plugin):
             grpc_cpp_plugin = path(build_dir + '/third_party/grpc/Release/grpc_cpp_plugin.exe')
     else:
-        grpc_cpp_plugin = path(build_dir_release + '/third_party/grpc/grpc_cpp_plugin')
+        grpc_cpp_plugin = path(build_dir_release + '/third_party/grpc/grpc_cpp_plugin.exe')
         if not os.path.exists(grpc_cpp_plugin):
-            grpc_cpp_plugin = path(build_dir_debug + '/third_party/grpc/grpc_cpp_plugin')
+            grpc_cpp_plugin = path(build_dir_debug + '/third_party/grpc/grpc_cpp_plugin.exe')
 
     if not os.path.exists(grpc_cpp_plugin):
         print('grpc_cpp_plugin not found')
@@ -103,10 +92,11 @@ def find_grpc_cpp_plugin():
     return grpc_cpp_plugin
 
 def find_protoc():
+    print(os.path.abspath('.'))
     if is_windows:
-        protoc = path(build_dir + '/third_party/grpc/third_party/protobuf/Debug/protoc.exe')
+        protoc = path(os.path.abspath('.') + '/gen_api/protoc.exe')
         if not os.path.exists(protoc):
-            protoc = path(build_dir + '/third_party/grpc/third_party/protobuf/Release/protoc.exe')
+            protoc = path(build_dir + '/protoc.exe')
     else:
         protoc = path(build_dir_release + '/third_party/grpc/third_party/protobuf/protoc')
         if not os.path.exists(protoc):
@@ -120,7 +110,7 @@ def find_protoc():
     return protoc
 
 def call(commands, shell=False):
-    #print('call', str(commands))
+    print('call', str(commands))
     res = subprocess.call(commands, shell=shell)
     if res != 0:
         sys.exit(-1)
@@ -171,29 +161,29 @@ call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC
 call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path('github.com/heroiclabs/nakama/apigrpc/apigrpc.proto')])
 call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path('github.com/heroiclabs/nakama-common/api/api.proto')])
 
-os.chdir(path(GOOGLEAPIS + '/google/rpc'))
+#os.chdir(path(GOOGLEAPIS + '/google/rpc'))
 
-call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + path(OUT + '/google/rpc'), 'status.proto'])
+call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path(GOOGLEAPIS + '/google/rpc/status.proto')])
 
-os.chdir(path(GOOGLEAPIS + '/google/api'))
+#os.chdir(path(GOOGLEAPIS + '/google/api'))
 
-call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + path(OUT + '/google/api'), 'annotations.proto'])
-call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + path(OUT + '/google/api'), 'http.proto'])
+call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path(GOOGLEAPIS + '/google/api/annotations.proto')])
+call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path(GOOGLEAPIS + '/google/api/http.proto')])
 
 os.chdir(CUR_DIR)
 
-call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path(GRPC_GATEWAY + '/protoc-gen-swagger/options/annotations.proto')])
-call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path(GRPC_GATEWAY + '/protoc-gen-swagger/options/openapiv2.proto')])
+call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path(GRPC_GATEWAY + '/protoc-gen-openapiv2/options/annotations.proto')])
+call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path(GRPC_GATEWAY + '/protoc-gen-openapiv2/options/openapiv2.proto')])
 
 print('generating rtapi')
 
-call([PROTOC, '-I.', '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path('github.com/heroiclabs/nakama-common/rtapi/realtime.proto')])
+call([PROTOC, '-I.', '-I' + GRPC_GATEWAY, '-I' + GOOGLEAPIS, '-I' + PROTOBUF_SRC, '--cpp_out=' + OUT, path('github.com/heroiclabs/nakama-common/rtapi/realtime.proto')])
 
 # copy API
 root, dirs, files = next(os.walk(OUT))
 for folder in dirs:
     dest = os.path.join(API_DESTINATION, folder)
-    shutil.rmtree(dest)
+    shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(os.path.join(root, folder), dest)
 
 print('copied to', API_DESTINATION)

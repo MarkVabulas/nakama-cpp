@@ -79,26 +79,22 @@ if(BUILD_REST_CLIENT)
 endif(BUILD_REST_CLIENT)
 
 if(BUILD_HTTP_CPPREST OR BUILD_WEBSOCKET_CPPREST)
-    target_link_libraries(nakama-cpp PUBLIC cpprest)
     target_compile_definitions(nakama-cpp PRIVATE _TURN_OFF_PLATFORM_STRING)
 endif()
 
 if(BUILD_GRPC_CLIENT)
-    target_link_libraries(nakama-cpp PUBLIC grpc++)
     target_compile_definitions(nakama-cpp PRIVATE BUILD_GRPC_CLIENT)
 endif()
 
 if((BUILD_GRPC_CLIENT AND NAKAMA_SSL_ENABLED) OR BUILD_HTTP_CPPREST OR BUILD_WEBSOCKET_CPPREST)
     target_compile_definitions(nakama-cpp PRIVATE NAKAMA_SSL_ENABLED)
     target_include_directories(nakama-cpp PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/boringssl/include)
-    target_link_libraries(nakama-cpp PUBLIC ssl crypto)
 endif()
 
 if(BUILD_C_API)
     target_compile_definitions(nakama-cpp PRIVATE BUILD_C_API)
 endif()
 
-target_link_libraries(nakama-cpp PUBLIC libprotobuf)
 
 if(ANDROID)
     target_link_libraries(nakama-cpp PUBLIC log)
@@ -109,7 +105,6 @@ target_include_directories(nakama-cpp
     PUBLIC ${PUBLIC_INCLUDE_DIR}
     PRIVATE api
     PRIVATE .
-    PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src
 )
 
 source_group(TREE ${PUBLIC_INCLUDE_DIR}       PREFIX include FILES ${_public_headers_list})

@@ -53,7 +53,7 @@ void NWebsocketCppRest::tick()
     {
         if (_activityTimeoutMs > 0 && getUnixTimestampMs()-_lastReceivedMessageTimeMs >= _activityTimeoutMs)
         {
-            disconnect(web::websockets::client::websocket_close_status::activity_timeout, "Activity timeout");
+            disconnect(web::websockets::client::websocket_close_status::policy_violation, "Activity timeout");
         }
     }
 

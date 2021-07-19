@@ -1,2 +1,7 @@
 .DS_Store
 .vscode
+/out
+/.vs
+/gen_api/protoc.exe
+/gen_api/libprotoc.dll
+/gen_api/libprotobuf.dll

@@ -26,7 +26,7 @@
 #include "DefaultSession.h"
 #include "google/rpc/status.pb.h"
 #include "google/protobuf/util/json_util.h"
-#include "grpc/include/grpcpp/impl/codegen/status_code_enum.h"
+#include "grpcpp/impl/codegen/status_code_enum.h"
 #include "RapidjsonHelper.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"

@@ -2,8 +2,6 @@
 // If you make any local change, they will be lost.
 // source: github.com/heroiclabs/nakama/apigrpc/apigrpc.proto
 
-#ifdef BUILD_GRPC_CLIENT
-
 #include "github.com/heroiclabs/nakama/apigrpc/apigrpc.pb.h"
 #include "github.com/heroiclabs/nakama/apigrpc/apigrpc.grpc.pb.h"
 
@@ -13,9 +11,12 @@
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_unary_call.h>
 #include <grpcpp/impl/codegen/client_callback.h>
-#include <grpcpp/impl/codegen/method_handler_impl.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
+#include <grpcpp/impl/codegen/method_handler.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_handlers.h>
+#include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
 namespace nakama {
@@ -24,6 +25,8 @@ namespace api {
 static const char* Nakama_method_names[] = {
   "/nakama.api.Nakama/AddFriends",
   "/nakama.api.Nakama/AddGroupUsers",
+  "/nakama.api.Nakama/SessionRefresh",
+  "/nakama.api.Nakama/SessionLogout",
   "/nakama.api.Nakama/AuthenticateApple",
   "/nakama.api.Nakama/AuthenticateCustom",
   "/nakama.api.Nakama/AuthenticateDevice",
@@ -46,6 +49,7 @@ static const char* Nakama_method_names[] = {
   "/nakama.api.Nakama/GetUsers",
   "/nakama.api.Nakama/Healthcheck",
   "/nakama.api.Nakama/ImportFacebookFriends",
+  "/nakama.api.Nakama/ImportSteamFriends",
   "/nakama.api.Nakama/JoinGroup",
   "/nakama.api.Nakama/JoinTournament",
   "/nakama.api.Nakama/KickGroupUsers",
@@ -87,6 +91,9 @@ static const char* Nakama_method_names[] = {
   "/nakama.api.Nakama/UnlinkSteam",
   "/nakama.api.Nakama/UpdateAccount",
   "/nakama.api.Nakama/UpdateGroup",
+  "/nakama.api.Nakama/ValidatePurchaseApple",
+  "/nakama.api.Nakama/ValidatePurchaseGoogle",
+  "/nakama.api.Nakama/ValidatePurchaseHuawei",
   "/nakama.api.Nakama/WriteLeaderboardRecord",
   "/nakama.api.Nakama/WriteStorageObjects",
   "/nakama.api.Nakama/WriteTournamentRecord",
@@ -101,1503 +108,2523 @@ std::unique_ptr< Nakama::Stub> Nakama::NewStub(const std::shared_ptr< ::grpc::Ch
 Nakama::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
   : channel_(channel), rpcmethod_AddFriends_(Nakama_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_AddGroupUsers_(Nakama_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateApple_(Nakama_method_names[2], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateCustom_(Nakama_method_names[3], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateDevice_(Nakama_method_names[4], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateEmail_(Nakama_method_names[5], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateFacebook_(Nakama_method_names[6], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateFacebookInstantGame_(Nakama_method_names[7], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateGameCenter_(Nakama_method_names[8], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateGoogle_(Nakama_method_names[9], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AuthenticateSteam_(Nakama_method_names[10], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_BanGroupUsers_(Nakama_method_names[11], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_BlockFriends_(Nakama_method_names[12], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_CreateGroup_(Nakama_method_names[13], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeleteFriends_(Nakama_method_names[14], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeleteGroup_(Nakama_method_names[15], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeleteLeaderboardRecord_(Nakama_method_names[16], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeleteNotifications_(Nakama_method_names[17], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeleteStorageObjects_(Nakama_method_names[18], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_Event_(Nakama_method_names[19], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetAccount_(Nakama_method_names[20], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetUsers_(Nakama_method_names[21], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_Healthcheck_(Nakama_method_names[22], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ImportFacebookFriends_(Nakama_method_names[23], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_JoinGroup_(Nakama_method_names[24], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_JoinTournament_(Nakama_method_names[25], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_KickGroupUsers_(Nakama_method_names[26], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LeaveGroup_(Nakama_method_names[27], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkApple_(Nakama_method_names[28], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkCustom_(Nakama_method_names[29], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkDevice_(Nakama_method_names[30], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkEmail_(Nakama_method_names[31], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkFacebook_(Nakama_method_names[32], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkFacebookInstantGame_(Nakama_method_names[33], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkGameCenter_(Nakama_method_names[34], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkGoogle_(Nakama_method_names[35], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_LinkSteam_(Nakama_method_names[36], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListChannelMessages_(Nakama_method_names[37], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListFriends_(Nakama_method_names[38], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListGroups_(Nakama_method_names[39], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListGroupUsers_(Nakama_method_names[40], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListLeaderboardRecords_(Nakama_method_names[41], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListLeaderboardRecordsAroundOwner_(Nakama_method_names[42], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListMatches_(Nakama_method_names[43], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListNotifications_(Nakama_method_names[44], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListStorageObjects_(Nakama_method_names[45], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListTournaments_(Nakama_method_names[46], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListTournamentRecords_(Nakama_method_names[47], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListTournamentRecordsAroundOwner_(Nakama_method_names[48], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListUserGroups_(Nakama_method_names[49], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_PromoteGroupUsers_(Nakama_method_names[50], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DemoteGroupUsers_(Nakama_method_names[51], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ReadStorageObjects_(Nakama_method_names[52], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RpcFunc_(Nakama_method_names[53], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkApple_(Nakama_method_names[54], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkCustom_(Nakama_method_names[55], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkDevice_(Nakama_method_names[56], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkEmail_(Nakama_method_names[57], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkFacebook_(Nakama_method_names[58], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkFacebookInstantGame_(Nakama_method_names[59], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkGameCenter_(Nakama_method_names[60], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkGoogle_(Nakama_method_names[61], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UnlinkSteam_(Nakama_method_names[62], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UpdateAccount_(Nakama_method_names[63], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_UpdateGroup_(Nakama_method_names[64], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_WriteLeaderboardRecord_(Nakama_method_names[65], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_WriteStorageObjects_(Nakama_method_names[66], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_WriteTournamentRecord_(Nakama_method_names[67], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_SessionRefresh_(Nakama_method_names[2], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_SessionLogout_(Nakama_method_names[3], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateApple_(Nakama_method_names[4], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateCustom_(Nakama_method_names[5], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateDevice_(Nakama_method_names[6], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateEmail_(Nakama_method_names[7], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateFacebook_(Nakama_method_names[8], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateFacebookInstantGame_(Nakama_method_names[9], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateGameCenter_(Nakama_method_names[10], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateGoogle_(Nakama_method_names[11], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AuthenticateSteam_(Nakama_method_names[12], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BanGroupUsers_(Nakama_method_names[13], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BlockFriends_(Nakama_method_names[14], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateGroup_(Nakama_method_names[15], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeleteFriends_(Nakama_method_names[16], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeleteGroup_(Nakama_method_names[17], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeleteLeaderboardRecord_(Nakama_method_names[18], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeleteNotifications_(Nakama_method_names[19], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeleteStorageObjects_(Nakama_method_names[20], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Event_(Nakama_method_names[21], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetAccount_(Nakama_method_names[22], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetUsers_(Nakama_method_names[23], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Healthcheck_(Nakama_method_names[24], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ImportFacebookFriends_(Nakama_method_names[25], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ImportSteamFriends_(Nakama_method_names[26], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_JoinGroup_(Nakama_method_names[27], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_JoinTournament_(Nakama_method_names[28], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_KickGroupUsers_(Nakama_method_names[29], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LeaveGroup_(Nakama_method_names[30], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkApple_(Nakama_method_names[31], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkCustom_(Nakama_method_names[32], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkDevice_(Nakama_method_names[33], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkEmail_(Nakama_method_names[34], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkFacebook_(Nakama_method_names[35], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkFacebookInstantGame_(Nakama_method_names[36], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkGameCenter_(Nakama_method_names[37], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkGoogle_(Nakama_method_names[38], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_LinkSteam_(Nakama_method_names[39], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListChannelMessages_(Nakama_method_names[40], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListFriends_(Nakama_method_names[41], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListGroups_(Nakama_method_names[42], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListGroupUsers_(Nakama_method_names[43], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListLeaderboardRecords_(Nakama_method_names[44], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListLeaderboardRecordsAroundOwner_(Nakama_method_names[45], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListMatches_(Nakama_method_names[46], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListNotifications_(Nakama_method_names[47], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListStorageObjects_(Nakama_method_names[48], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListTournaments_(Nakama_method_names[49], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListTournamentRecords_(Nakama_method_names[50], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListTournamentRecordsAroundOwner_(Nakama_method_names[51], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListUserGroups_(Nakama_method_names[52], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_PromoteGroupUsers_(Nakama_method_names[53], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DemoteGroupUsers_(Nakama_method_names[54], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ReadStorageObjects_(Nakama_method_names[55], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RpcFunc_(Nakama_method_names[56], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkApple_(Nakama_method_names[57], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkCustom_(Nakama_method_names[58], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkDevice_(Nakama_method_names[59], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkEmail_(Nakama_method_names[60], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkFacebook_(Nakama_method_names[61], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkFacebookInstantGame_(Nakama_method_names[62], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkGameCenter_(Nakama_method_names[63], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkGoogle_(Nakama_method_names[64], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UnlinkSteam_(Nakama_method_names[65], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UpdateAccount_(Nakama_method_names[66], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_UpdateGroup_(Nakama_method_names[67], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ValidatePurchaseApple_(Nakama_method_names[68], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ValidatePurchaseGoogle_(Nakama_method_names[69], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ValidatePurchaseHuawei_(Nakama_method_names[70], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_WriteLeaderboardRecord_(Nakama_method_names[71], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_WriteStorageObjects_(Nakama_method_names[72], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_WriteTournamentRecord_(Nakama_method_names[73], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status Nakama::Stub::AddFriends(::grpc::ClientContext* context, const ::nakama::api::AddFriendsRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AddFriends_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AddFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AddFriends_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AddFriends(::grpc::ClientContext* context, const ::nakama::api::AddFriendsRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AddFriends_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AddFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AddFriends_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncAddFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::AddFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_AddFriends_, context, request, true);
+void Nakama::Stub::experimental_async::AddFriends(::grpc::ClientContext* context, const ::nakama::api::AddFriendsRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AddFriends_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncAddFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::AddFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_AddFriends_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AddFriendsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AddFriends_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncAddFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::AddFriendsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAddFriendsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AddGroupUsers(::grpc::ClientContext* context, const ::nakama::api::AddGroupUsersRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AddGroupUsers_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AddGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AddGroupUsers_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AddGroupUsers(::grpc::ClientContext* context, const ::nakama::api::AddGroupUsersRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AddGroupUsers_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AddGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AddGroupUsers_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncAddGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::AddGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_AddGroupUsers_, context, request, true);
+void Nakama::Stub::experimental_async::AddGroupUsers(::grpc::ClientContext* context, const ::nakama::api::AddGroupUsersRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AddGroupUsers_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncAddGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::AddGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_AddGroupUsers_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AddGroupUsersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AddGroupUsers_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncAddGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::AddGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAddGroupUsersRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Nakama::Stub::SessionRefresh(::grpc::ClientContext* context, const ::nakama::api::SessionRefreshRequest& request, ::nakama::api::Session* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::SessionRefreshRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_SessionRefresh_, context, request, response);
+}
+
+void Nakama::Stub::experimental_async::SessionRefresh(::grpc::ClientContext* context, const ::nakama::api::SessionRefreshRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::SessionRefreshRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SessionRefresh_, context, request, response, std::move(f));
+}
+
+void Nakama::Stub::experimental_async::SessionRefresh(::grpc::ClientContext* context, const ::nakama::api::SessionRefreshRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SessionRefresh_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncSessionRefreshRaw(::grpc::ClientContext* context, const ::nakama::api::SessionRefreshRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::SessionRefreshRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_SessionRefresh_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncSessionRefreshRaw(::grpc::ClientContext* context, const ::nakama::api::SessionRefreshRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncSessionRefreshRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Nakama::Stub::SessionLogout(::grpc::ClientContext* context, const ::nakama::api::SessionLogoutRequest& request, ::google::protobuf::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::SessionLogoutRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_SessionLogout_, context, request, response);
+}
+
+void Nakama::Stub::experimental_async::SessionLogout(::grpc::ClientContext* context, const ::nakama::api::SessionLogoutRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::SessionLogoutRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SessionLogout_, context, request, response, std::move(f));
+}
+
+void Nakama::Stub::experimental_async::SessionLogout(::grpc::ClientContext* context, const ::nakama::api::SessionLogoutRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_SessionLogout_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncSessionLogoutRaw(::grpc::ClientContext* context, const ::nakama::api::SessionLogoutRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::SessionLogoutRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_SessionLogout_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncSessionLogoutRaw(::grpc::ClientContext* context, const ::nakama::api::SessionLogoutRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncSessionLogoutRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateApple(::grpc::ClientContext* context, const ::nakama::api::AuthenticateAppleRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateApple_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateAppleRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateApple_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateApple(::grpc::ClientContext* context, const ::nakama::api::AuthenticateAppleRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateApple_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateAppleRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateApple_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateAppleRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateApple_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateApple(::grpc::ClientContext* context, const ::nakama::api::AuthenticateAppleRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateApple_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateAppleRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateApple_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateAppleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateApple_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateAppleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateAppleRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateCustom(::grpc::ClientContext* context, const ::nakama::api::AuthenticateCustomRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateCustom_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateCustomRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateCustom_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateCustom(::grpc::ClientContext* context, const ::nakama::api::AuthenticateCustomRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateCustom_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateCustomRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateCustom_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateCustomRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateCustom_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateCustom(::grpc::ClientContext* context, const ::nakama::api::AuthenticateCustomRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateCustom_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateCustomRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateCustom_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateCustomRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateCustom_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateCustomRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateCustomRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateDevice(::grpc::ClientContext* context, const ::nakama::api::AuthenticateDeviceRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateDevice_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateDeviceRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateDevice_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateDevice(::grpc::ClientContext* context, const ::nakama::api::AuthenticateDeviceRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateDevice_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateDeviceRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateDevice_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateDeviceRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateDevice_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateDevice(::grpc::ClientContext* context, const ::nakama::api::AuthenticateDeviceRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateDevice_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateDeviceRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateDevice_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateDeviceRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateDevice_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateDeviceRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateDeviceRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateEmail(::grpc::ClientContext* context, const ::nakama::api::AuthenticateEmailRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateEmail_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateEmailRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateEmail_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateEmail(::grpc::ClientContext* context, const ::nakama::api::AuthenticateEmailRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateEmail_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateEmailRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateEmail_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateEmailRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateEmail_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateEmail(::grpc::ClientContext* context, const ::nakama::api::AuthenticateEmailRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateEmail_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateEmailRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateEmail_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateEmailRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateEmail_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateEmailRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateEmailRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateFacebook(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateFacebook_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateFacebookRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateFacebook_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateFacebook(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateFacebook_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateFacebookRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateFacebook_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateFacebook_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateFacebook(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateFacebook_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateFacebook_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateFacebookRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateFacebook_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateFacebookRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookInstantGameRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateFacebookInstantGame_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateFacebookInstantGameRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateFacebookInstantGame_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookInstantGameRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateFacebookInstantGame_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateFacebookInstantGameRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateFacebookInstantGame_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookInstantGameRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateFacebookInstantGame_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookInstantGameRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateFacebookInstantGame_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookInstantGameRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateFacebookInstantGame_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateFacebookInstantGameRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateFacebookInstantGame_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateFacebookInstantGameRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateFacebookInstantGameRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateGameCenter(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGameCenterRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateGameCenter_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateGameCenterRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateGameCenter_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateGameCenter(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGameCenterRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateGameCenter_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateGameCenterRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateGameCenter_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGameCenterRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateGameCenter_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateGameCenter(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGameCenterRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateGameCenter_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGameCenterRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateGameCenter_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateGameCenterRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateGameCenter_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGameCenterRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateGameCenterRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateGoogle(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGoogleRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateGoogle_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateGoogleRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateGoogle_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateGoogle(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGoogleRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateGoogle_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateGoogleRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateGoogle_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGoogleRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateGoogle_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateGoogle(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGoogleRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateGoogle_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGoogleRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateGoogle_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateGoogleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateGoogle_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateGoogleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateGoogleRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::AuthenticateSteam(::grpc::ClientContext* context, const ::nakama::api::AuthenticateSteamRequest& request, ::nakama::api::Session* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_AuthenticateSteam_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AuthenticateSteamRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AuthenticateSteam_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::AuthenticateSteam(::grpc::ClientContext* context, const ::nakama::api::AuthenticateSteamRequest* request, ::nakama::api::Session* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_AuthenticateSteam_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AuthenticateSteamRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateSteam_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateSteamRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateSteam_, context, request, true);
+void Nakama::Stub::experimental_async::AuthenticateSteam(::grpc::ClientContext* context, const ::nakama::api::AuthenticateSteamRequest* request, ::nakama::api::Session* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AuthenticateSteam_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::PrepareAsyncAuthenticateSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateSteamRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Session>::Create(channel_.get(), cq, rpcmethod_AuthenticateSteam_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Session, ::nakama::api::AuthenticateSteamRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AuthenticateSteam_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Session>* Nakama::Stub::AsyncAuthenticateSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AuthenticateSteamRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAuthenticateSteamRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::BanGroupUsers(::grpc::ClientContext* context, const ::nakama::api::BanGroupUsersRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_BanGroupUsers_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::BanGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_BanGroupUsers_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::BanGroupUsers(::grpc::ClientContext* context, const ::nakama::api::BanGroupUsersRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_BanGroupUsers_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::BanGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BanGroupUsers_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncBanGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::BanGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_BanGroupUsers_, context, request, true);
+void Nakama::Stub::experimental_async::BanGroupUsers(::grpc::ClientContext* context, const ::nakama::api::BanGroupUsersRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BanGroupUsers_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncBanGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::BanGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_BanGroupUsers_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::BanGroupUsersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_BanGroupUsers_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncBanGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::BanGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncBanGroupUsersRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::BlockFriends(::grpc::ClientContext* context, const ::nakama::api::BlockFriendsRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_BlockFriends_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::BlockFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_BlockFriends_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::BlockFriends(::grpc::ClientContext* context, const ::nakama::api::BlockFriendsRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_BlockFriends_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::BlockFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BlockFriends_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncBlockFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::BlockFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_BlockFriends_, context, request, true);
+void Nakama::Stub::experimental_async::BlockFriends(::grpc::ClientContext* context, const ::nakama::api::BlockFriendsRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_BlockFriends_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncBlockFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::BlockFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_BlockFriends_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::BlockFriendsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_BlockFriends_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncBlockFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::BlockFriendsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncBlockFriendsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::CreateGroup(::grpc::ClientContext* context, const ::nakama::api::CreateGroupRequest& request, ::nakama::api::Group* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_CreateGroup_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::CreateGroupRequest, ::nakama::api::Group, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreateGroup_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::CreateGroup(::grpc::ClientContext* context, const ::nakama::api::CreateGroupRequest* request, ::nakama::api::Group* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_CreateGroup_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::CreateGroupRequest, ::nakama::api::Group, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateGroup_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Group>* Nakama::Stub::AsyncCreateGroupRaw(::grpc::ClientContext* context, const ::nakama::api::CreateGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Group>::Create(channel_.get(), cq, rpcmethod_CreateGroup_, context, request, true);
+void Nakama::Stub::experimental_async::CreateGroup(::grpc::ClientContext* context, const ::nakama::api::CreateGroupRequest* request, ::nakama::api::Group* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CreateGroup_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Group>* Nakama::Stub::PrepareAsyncCreateGroupRaw(::grpc::ClientContext* context, const ::nakama::api::CreateGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Group>::Create(channel_.get(), cq, rpcmethod_CreateGroup_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Group, ::nakama::api::CreateGroupRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CreateGroup_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Group>* Nakama::Stub::AsyncCreateGroupRaw(::grpc::ClientContext* context, const ::nakama::api::CreateGroupRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCreateGroupRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::DeleteFriends(::grpc::ClientContext* context, const ::nakama::api::DeleteFriendsRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_DeleteFriends_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::DeleteFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteFriends_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::DeleteFriends(::grpc::ClientContext* context, const ::nakama::api::DeleteFriendsRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_DeleteFriends_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::DeleteFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteFriends_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteFriends_, context, request, true);
+void Nakama::Stub::experimental_async::DeleteFriends(::grpc::ClientContext* context, const ::nakama::api::DeleteFriendsRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteFriends_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncDeleteFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteFriends_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::DeleteFriendsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteFriends_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteFriendsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncDeleteFriendsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::DeleteGroup(::grpc::ClientContext* context, const ::nakama::api::DeleteGroupRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_DeleteGroup_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::DeleteGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteGroup_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::DeleteGroup(::grpc::ClientContext* context, const ::nakama::api::DeleteGroupRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_DeleteGroup_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::DeleteGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteGroup_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteGroupRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteGroup_, context, request, true);
+void Nakama::Stub::experimental_async::DeleteGroup(::grpc::ClientContext* context, const ::nakama::api::DeleteGroupRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteGroup_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncDeleteGroupRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteGroup_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::DeleteGroupRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteGroup_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteGroupRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteGroupRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncDeleteGroupRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::DeleteLeaderboardRecord(::grpc::ClientContext* context, const ::nakama::api::DeleteLeaderboardRecordRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_DeleteLeaderboardRecord_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::DeleteLeaderboardRecordRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteLeaderboardRecord_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::DeleteLeaderboardRecord(::grpc::ClientContext* context, const ::nakama::api::DeleteLeaderboardRecordRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_DeleteLeaderboardRecord_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::DeleteLeaderboardRecordRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteLeaderboardRecord_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteLeaderboardRecordRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteLeaderboardRecordRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteLeaderboardRecord_, context, request, true);
+void Nakama::Stub::experimental_async::DeleteLeaderboardRecord(::grpc::ClientContext* context, const ::nakama::api::DeleteLeaderboardRecordRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteLeaderboardRecord_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncDeleteLeaderboardRecordRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteLeaderboardRecordRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteLeaderboardRecord_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::DeleteLeaderboardRecordRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteLeaderboardRecord_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteLeaderboardRecordRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteLeaderboardRecordRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncDeleteLeaderboardRecordRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::DeleteNotifications(::grpc::ClientContext* context, const ::nakama::api::DeleteNotificationsRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_DeleteNotifications_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::DeleteNotificationsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteNotifications_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::DeleteNotifications(::grpc::ClientContext* context, const ::nakama::api::DeleteNotificationsRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_DeleteNotifications_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::DeleteNotificationsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteNotifications_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteNotificationsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteNotificationsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteNotifications_, context, request, true);
+void Nakama::Stub::experimental_async::DeleteNotifications(::grpc::ClientContext* context, const ::nakama::api::DeleteNotificationsRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteNotifications_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncDeleteNotificationsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteNotificationsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteNotifications_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::DeleteNotificationsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteNotifications_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteNotificationsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteNotificationsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncDeleteNotificationsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::DeleteStorageObjects(::grpc::ClientContext* context, const ::nakama::api::DeleteStorageObjectsRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_DeleteStorageObjects_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::DeleteStorageObjectsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DeleteStorageObjects_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::DeleteStorageObjects(::grpc::ClientContext* context, const ::nakama::api::DeleteStorageObjectsRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_DeleteStorageObjects_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::DeleteStorageObjectsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteStorageObjects_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteStorageObjects_, context, request, true);
+void Nakama::Stub::experimental_async::DeleteStorageObjects(::grpc::ClientContext* context, const ::nakama::api::DeleteStorageObjectsRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DeleteStorageObjects_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncDeleteStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DeleteStorageObjects_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::DeleteStorageObjectsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DeleteStorageObjects_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDeleteStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::DeleteStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncDeleteStorageObjectsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::Event(::grpc::ClientContext* context, const ::nakama::api::Event& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_Event_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::Event, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Event_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::Event(::grpc::ClientContext* context, const ::nakama::api::Event* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Event_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::Event, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Event_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncEventRaw(::grpc::ClientContext* context, const ::nakama::api::Event& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_Event_, context, request, true);
+void Nakama::Stub::experimental_async::Event(::grpc::ClientContext* context, const ::nakama::api::Event* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Event_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncEventRaw(::grpc::ClientContext* context, const ::nakama::api::Event& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_Event_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::Event, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Event_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncEventRaw(::grpc::ClientContext* context, const ::nakama::api::Event& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncEventRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::GetAccount(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::nakama::api::Account* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_GetAccount_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::google::protobuf::Empty, ::nakama::api::Account, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetAccount_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::GetAccount(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::nakama::api::Account* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_GetAccount_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::google::protobuf::Empty, ::nakama::api::Account, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetAccount_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Account>* Nakama::Stub::AsyncGetAccountRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Account>::Create(channel_.get(), cq, rpcmethod_GetAccount_, context, request, true);
+void Nakama::Stub::experimental_async::GetAccount(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::nakama::api::Account* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetAccount_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Account>* Nakama::Stub::PrepareAsyncGetAccountRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Account>::Create(channel_.get(), cq, rpcmethod_GetAccount_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Account, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetAccount_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Account>* Nakama::Stub::AsyncGetAccountRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetAccountRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::GetUsers(::grpc::ClientContext* context, const ::nakama::api::GetUsersRequest& request, ::nakama::api::Users* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_GetUsers_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::GetUsersRequest, ::nakama::api::Users, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetUsers_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::GetUsers(::grpc::ClientContext* context, const ::nakama::api::GetUsersRequest* request, ::nakama::api::Users* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_GetUsers_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::GetUsersRequest, ::nakama::api::Users, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetUsers_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Users>* Nakama::Stub::AsyncGetUsersRaw(::grpc::ClientContext* context, const ::nakama::api::GetUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Users>::Create(channel_.get(), cq, rpcmethod_GetUsers_, context, request, true);
+void Nakama::Stub::experimental_async::GetUsers(::grpc::ClientContext* context, const ::nakama::api::GetUsersRequest* request, ::nakama::api::Users* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetUsers_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Users>* Nakama::Stub::PrepareAsyncGetUsersRaw(::grpc::ClientContext* context, const ::nakama::api::GetUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Users>::Create(channel_.get(), cq, rpcmethod_GetUsers_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Users, ::nakama::api::GetUsersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetUsers_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Users>* Nakama::Stub::AsyncGetUsersRaw(::grpc::ClientContext* context, const ::nakama::api::GetUsersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetUsersRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::Healthcheck(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_Healthcheck_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::google::protobuf::Empty, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Healthcheck_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::Healthcheck(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Healthcheck_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::google::protobuf::Empty, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Healthcheck_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncHealthcheckRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_Healthcheck_, context, request, true);
+void Nakama::Stub::experimental_async::Healthcheck(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Healthcheck_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncHealthcheckRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_Healthcheck_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Healthcheck_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncHealthcheckRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncHealthcheckRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ImportFacebookFriends(::grpc::ClientContext* context, const ::nakama::api::ImportFacebookFriendsRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ImportFacebookFriends_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ImportFacebookFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ImportFacebookFriends_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ImportFacebookFriends(::grpc::ClientContext* context, const ::nakama::api::ImportFacebookFriendsRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ImportFacebookFriends_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ImportFacebookFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ImportFacebookFriends_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncImportFacebookFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ImportFacebookFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_ImportFacebookFriends_, context, request, true);
+void Nakama::Stub::experimental_async::ImportFacebookFriends(::grpc::ClientContext* context, const ::nakama::api::ImportFacebookFriendsRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ImportFacebookFriends_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncImportFacebookFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ImportFacebookFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_ImportFacebookFriends_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::ImportFacebookFriendsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ImportFacebookFriends_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncImportFacebookFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ImportFacebookFriendsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncImportFacebookFriendsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Nakama::Stub::ImportSteamFriends(::grpc::ClientContext* context, const ::nakama::api::ImportSteamFriendsRequest& request, ::google::protobuf::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ImportSteamFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ImportSteamFriends_, context, request, response);
+}
+
+void Nakama::Stub::experimental_async::ImportSteamFriends(::grpc::ClientContext* context, const ::nakama::api::ImportSteamFriendsRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ImportSteamFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ImportSteamFriends_, context, request, response, std::move(f));
+}
+
+void Nakama::Stub::experimental_async::ImportSteamFriends(::grpc::ClientContext* context, const ::nakama::api::ImportSteamFriendsRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ImportSteamFriends_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncImportSteamFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ImportSteamFriendsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::ImportSteamFriendsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ImportSteamFriends_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncImportSteamFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ImportSteamFriendsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncImportSteamFriendsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::JoinGroup(::grpc::ClientContext* context, const ::nakama::api::JoinGroupRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_JoinGroup_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::JoinGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_JoinGroup_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::JoinGroup(::grpc::ClientContext* context, const ::nakama::api::JoinGroupRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_JoinGroup_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::JoinGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_JoinGroup_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncJoinGroupRaw(::grpc::ClientContext* context, const ::nakama::api::JoinGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_JoinGroup_, context, request, true);
+void Nakama::Stub::experimental_async::JoinGroup(::grpc::ClientContext* context, const ::nakama::api::JoinGroupRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_JoinGroup_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncJoinGroupRaw(::grpc::ClientContext* context, const ::nakama::api::JoinGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_JoinGroup_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::JoinGroupRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_JoinGroup_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncJoinGroupRaw(::grpc::ClientContext* context, const ::nakama::api::JoinGroupRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncJoinGroupRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::JoinTournament(::grpc::ClientContext* context, const ::nakama::api::JoinTournamentRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_JoinTournament_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::JoinTournamentRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_JoinTournament_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::JoinTournament(::grpc::ClientContext* context, const ::nakama::api::JoinTournamentRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_JoinTournament_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::JoinTournamentRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_JoinTournament_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncJoinTournamentRaw(::grpc::ClientContext* context, const ::nakama::api::JoinTournamentRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_JoinTournament_, context, request, true);
+void Nakama::Stub::experimental_async::JoinTournament(::grpc::ClientContext* context, const ::nakama::api::JoinTournamentRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_JoinTournament_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncJoinTournamentRaw(::grpc::ClientContext* context, const ::nakama::api::JoinTournamentRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_JoinTournament_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::JoinTournamentRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_JoinTournament_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncJoinTournamentRaw(::grpc::ClientContext* context, const ::nakama::api::JoinTournamentRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncJoinTournamentRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::KickGroupUsers(::grpc::ClientContext* context, const ::nakama::api::KickGroupUsersRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_KickGroupUsers_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::KickGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_KickGroupUsers_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::KickGroupUsers(::grpc::ClientContext* context, const ::nakama::api::KickGroupUsersRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_KickGroupUsers_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::KickGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_KickGroupUsers_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncKickGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::KickGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_KickGroupUsers_, context, request, true);
+void Nakama::Stub::experimental_async::KickGroupUsers(::grpc::ClientContext* context, const ::nakama::api::KickGroupUsersRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_KickGroupUsers_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncKickGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::KickGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_KickGroupUsers_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::KickGroupUsersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_KickGroupUsers_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncKickGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::KickGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncKickGroupUsersRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LeaveGroup(::grpc::ClientContext* context, const ::nakama::api::LeaveGroupRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LeaveGroup_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::LeaveGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LeaveGroup_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LeaveGroup(::grpc::ClientContext* context, const ::nakama::api::LeaveGroupRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LeaveGroup_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::LeaveGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveGroup_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLeaveGroupRaw(::grpc::ClientContext* context, const ::nakama::api::LeaveGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LeaveGroup_, context, request, true);
+void Nakama::Stub::experimental_async::LeaveGroup(::grpc::ClientContext* context, const ::nakama::api::LeaveGroupRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LeaveGroup_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLeaveGroupRaw(::grpc::ClientContext* context, const ::nakama::api::LeaveGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LeaveGroup_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::LeaveGroupRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LeaveGroup_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLeaveGroupRaw(::grpc::ClientContext* context, const ::nakama::api::LeaveGroupRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLeaveGroupRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkApple(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkApple_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountApple, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkApple_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkApple(::grpc::ClientContext* context, const ::nakama::api::AccountApple* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkApple_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountApple, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkApple_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkApple_, context, request, true);
+void Nakama::Stub::experimental_async::LinkApple(::grpc::ClientContext* context, const ::nakama::api::AccountApple* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkApple_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkApple_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountApple, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkApple_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkAppleRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkCustom(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkCustom_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountCustom, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkCustom_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkCustom(::grpc::ClientContext* context, const ::nakama::api::AccountCustom* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkCustom_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountCustom, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkCustom_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkCustom_, context, request, true);
+void Nakama::Stub::experimental_async::LinkCustom(::grpc::ClientContext* context, const ::nakama::api::AccountCustom* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkCustom_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkCustom_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountCustom, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkCustom_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkCustomRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkDevice(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkDevice_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountDevice, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkDevice_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkDevice(::grpc::ClientContext* context, const ::nakama::api::AccountDevice* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkDevice_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountDevice, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkDevice_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkDevice_, context, request, true);
+void Nakama::Stub::experimental_async::LinkDevice(::grpc::ClientContext* context, const ::nakama::api::AccountDevice* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkDevice_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkDevice_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountDevice, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkDevice_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkDeviceRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkEmail(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkEmail_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountEmail, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkEmail_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkEmail(::grpc::ClientContext* context, const ::nakama::api::AccountEmail* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkEmail_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountEmail, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkEmail_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkEmail_, context, request, true);
+void Nakama::Stub::experimental_async::LinkEmail(::grpc::ClientContext* context, const ::nakama::api::AccountEmail* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkEmail_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkEmail_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountEmail, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkEmail_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkEmailRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkFacebook(::grpc::ClientContext* context, const ::nakama::api::LinkFacebookRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkFacebook_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::LinkFacebookRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkFacebook_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkFacebook(::grpc::ClientContext* context, const ::nakama::api::LinkFacebookRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkFacebook_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::LinkFacebookRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkFacebook_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::LinkFacebookRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkFacebook_, context, request, true);
+void Nakama::Stub::experimental_async::LinkFacebook(::grpc::ClientContext* context, const ::nakama::api::LinkFacebookRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkFacebook_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::LinkFacebookRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkFacebook_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::LinkFacebookRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkFacebook_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::LinkFacebookRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkFacebookRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkFacebookInstantGame_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkFacebookInstantGame_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkFacebookInstantGame_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkFacebookInstantGame_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkFacebookInstantGame_, context, request, true);
+void Nakama::Stub::experimental_async::LinkFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkFacebookInstantGame_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkFacebookInstantGame_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountFacebookInstantGame, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkFacebookInstantGame_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkFacebookInstantGameRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkGameCenter(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkGameCenter_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountGameCenter, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkGameCenter_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkGameCenter(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkGameCenter_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountGameCenter, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkGameCenter_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkGameCenter_, context, request, true);
+void Nakama::Stub::experimental_async::LinkGameCenter(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkGameCenter_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkGameCenter_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountGameCenter, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkGameCenter_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkGameCenterRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::LinkGoogle(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkGoogle_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountGoogle, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkGoogle_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::LinkGoogle(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkGoogle_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountGoogle, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkGoogle_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkGoogle_, context, request, true);
+void Nakama::Stub::experimental_async::LinkGoogle(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkGoogle_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkGoogle_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountGoogle, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkGoogle_, context, request);
 }
 
-::grpc::Status Nakama::Stub::LinkSteam(::grpc::ClientContext* context, const ::nakama::api::AccountSteam& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_LinkSteam_, context, request, response);
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkGoogleRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
-void Nakama::Stub::experimental_async::LinkSteam(::grpc::ClientContext* context, const ::nakama::api::AccountSteam* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_LinkSteam_, context, request, response, std::move(f));
+::grpc::Status Nakama::Stub::LinkSteam(::grpc::ClientContext* context, const ::nakama::api::LinkSteamRequest& request, ::google::protobuf::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::LinkSteamRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_LinkSteam_, context, request, response);
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AccountSteam& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkSteam_, context, request, true);
+void Nakama::Stub::experimental_async::LinkSteam(::grpc::ClientContext* context, const ::nakama::api::LinkSteamRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::LinkSteamRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkSteam_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AccountSteam& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_LinkSteam_, context, request, false);
+void Nakama::Stub::experimental_async::LinkSteam(::grpc::ClientContext* context, const ::nakama::api::LinkSteamRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_LinkSteam_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncLinkSteamRaw(::grpc::ClientContext* context, const ::nakama::api::LinkSteamRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::LinkSteamRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_LinkSteam_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncLinkSteamRaw(::grpc::ClientContext* context, const ::nakama::api::LinkSteamRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncLinkSteamRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListChannelMessages(::grpc::ClientContext* context, const ::nakama::api::ListChannelMessagesRequest& request, ::nakama::api::ChannelMessageList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListChannelMessages_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListChannelMessagesRequest, ::nakama::api::ChannelMessageList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListChannelMessages_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListChannelMessages(::grpc::ClientContext* context, const ::nakama::api::ListChannelMessagesRequest* request, ::nakama::api::ChannelMessageList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListChannelMessages_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListChannelMessagesRequest, ::nakama::api::ChannelMessageList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListChannelMessages_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::ChannelMessageList>* Nakama::Stub::AsyncListChannelMessagesRaw(::grpc::ClientContext* context, const ::nakama::api::ListChannelMessagesRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::ChannelMessageList>::Create(channel_.get(), cq, rpcmethod_ListChannelMessages_, context, request, true);
+void Nakama::Stub::experimental_async::ListChannelMessages(::grpc::ClientContext* context, const ::nakama::api::ListChannelMessagesRequest* request, ::nakama::api::ChannelMessageList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListChannelMessages_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::ChannelMessageList>* Nakama::Stub::PrepareAsyncListChannelMessagesRaw(::grpc::ClientContext* context, const ::nakama::api::ListChannelMessagesRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::ChannelMessageList>::Create(channel_.get(), cq, rpcmethod_ListChannelMessages_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::ChannelMessageList, ::nakama::api::ListChannelMessagesRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListChannelMessages_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::ChannelMessageList>* Nakama::Stub::AsyncListChannelMessagesRaw(::grpc::ClientContext* context, const ::nakama::api::ListChannelMessagesRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListChannelMessagesRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListFriends(::grpc::ClientContext* context, const ::nakama::api::ListFriendsRequest& request, ::nakama::api::FriendList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListFriends_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListFriendsRequest, ::nakama::api::FriendList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListFriends_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListFriends(::grpc::ClientContext* context, const ::nakama::api::ListFriendsRequest* request, ::nakama::api::FriendList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListFriends_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListFriendsRequest, ::nakama::api::FriendList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListFriends_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::FriendList>* Nakama::Stub::AsyncListFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ListFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::FriendList>::Create(channel_.get(), cq, rpcmethod_ListFriends_, context, request, true);
+void Nakama::Stub::experimental_async::ListFriends(::grpc::ClientContext* context, const ::nakama::api::ListFriendsRequest* request, ::nakama::api::FriendList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListFriends_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::FriendList>* Nakama::Stub::PrepareAsyncListFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ListFriendsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::FriendList>::Create(channel_.get(), cq, rpcmethod_ListFriends_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::FriendList, ::nakama::api::ListFriendsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListFriends_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::FriendList>* Nakama::Stub::AsyncListFriendsRaw(::grpc::ClientContext* context, const ::nakama::api::ListFriendsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListFriendsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListGroups(::grpc::ClientContext* context, const ::nakama::api::ListGroupsRequest& request, ::nakama::api::GroupList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListGroups_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListGroupsRequest, ::nakama::api::GroupList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListGroups_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListGroups(::grpc::ClientContext* context, const ::nakama::api::ListGroupsRequest* request, ::nakama::api::GroupList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListGroups_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListGroupsRequest, ::nakama::api::GroupList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListGroups_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::GroupList>* Nakama::Stub::AsyncListGroupsRaw(::grpc::ClientContext* context, const ::nakama::api::ListGroupsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::GroupList>::Create(channel_.get(), cq, rpcmethod_ListGroups_, context, request, true);
+void Nakama::Stub::experimental_async::ListGroups(::grpc::ClientContext* context, const ::nakama::api::ListGroupsRequest* request, ::nakama::api::GroupList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListGroups_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::GroupList>* Nakama::Stub::PrepareAsyncListGroupsRaw(::grpc::ClientContext* context, const ::nakama::api::ListGroupsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::GroupList>::Create(channel_.get(), cq, rpcmethod_ListGroups_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::GroupList, ::nakama::api::ListGroupsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListGroups_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::GroupList>* Nakama::Stub::AsyncListGroupsRaw(::grpc::ClientContext* context, const ::nakama::api::ListGroupsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListGroupsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListGroupUsers(::grpc::ClientContext* context, const ::nakama::api::ListGroupUsersRequest& request, ::nakama::api::GroupUserList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListGroupUsers_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListGroupUsersRequest, ::nakama::api::GroupUserList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListGroupUsers_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListGroupUsers(::grpc::ClientContext* context, const ::nakama::api::ListGroupUsersRequest* request, ::nakama::api::GroupUserList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListGroupUsers_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListGroupUsersRequest, ::nakama::api::GroupUserList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListGroupUsers_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::GroupUserList>* Nakama::Stub::AsyncListGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::ListGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::GroupUserList>::Create(channel_.get(), cq, rpcmethod_ListGroupUsers_, context, request, true);
+void Nakama::Stub::experimental_async::ListGroupUsers(::grpc::ClientContext* context, const ::nakama::api::ListGroupUsersRequest* request, ::nakama::api::GroupUserList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListGroupUsers_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::GroupUserList>* Nakama::Stub::PrepareAsyncListGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::ListGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::GroupUserList>::Create(channel_.get(), cq, rpcmethod_ListGroupUsers_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::GroupUserList, ::nakama::api::ListGroupUsersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListGroupUsers_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::GroupUserList>* Nakama::Stub::AsyncListGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::ListGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListGroupUsersRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListLeaderboardRecords(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsRequest& request, ::nakama::api::LeaderboardRecordList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListLeaderboardRecords_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListLeaderboardRecordsRequest, ::nakama::api::LeaderboardRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListLeaderboardRecords_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListLeaderboardRecords(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsRequest* request, ::nakama::api::LeaderboardRecordList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListLeaderboardRecords_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListLeaderboardRecordsRequest, ::nakama::api::LeaderboardRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListLeaderboardRecords_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecordList>* Nakama::Stub::AsyncListLeaderboardRecordsRaw(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecordList>::Create(channel_.get(), cq, rpcmethod_ListLeaderboardRecords_, context, request, true);
+void Nakama::Stub::experimental_async::ListLeaderboardRecords(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsRequest* request, ::nakama::api::LeaderboardRecordList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListLeaderboardRecords_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecordList>* Nakama::Stub::PrepareAsyncListLeaderboardRecordsRaw(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecordList>::Create(channel_.get(), cq, rpcmethod_ListLeaderboardRecords_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::LeaderboardRecordList, ::nakama::api::ListLeaderboardRecordsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListLeaderboardRecords_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecordList>* Nakama::Stub::AsyncListLeaderboardRecordsRaw(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListLeaderboardRecordsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListLeaderboardRecordsAroundOwner(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest& request, ::nakama::api::LeaderboardRecordList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest, ::nakama::api::LeaderboardRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListLeaderboardRecordsAroundOwner(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest* request, ::nakama::api::LeaderboardRecordList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest, ::nakama::api::LeaderboardRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecordList>* Nakama::Stub::AsyncListLeaderboardRecordsAroundOwnerRaw(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecordList>::Create(channel_.get(), cq, rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request, true);
+void Nakama::Stub::experimental_async::ListLeaderboardRecordsAroundOwner(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest* request, ::nakama::api::LeaderboardRecordList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecordList>* Nakama::Stub::PrepareAsyncListLeaderboardRecordsAroundOwnerRaw(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecordList>::Create(channel_.get(), cq, rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::LeaderboardRecordList, ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListLeaderboardRecordsAroundOwner_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecordList>* Nakama::Stub::AsyncListLeaderboardRecordsAroundOwnerRaw(::grpc::ClientContext* context, const ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListLeaderboardRecordsAroundOwnerRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListMatches(::grpc::ClientContext* context, const ::nakama::api::ListMatchesRequest& request, ::nakama::api::MatchList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListMatches_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListMatchesRequest, ::nakama::api::MatchList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListMatches_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListMatches(::grpc::ClientContext* context, const ::nakama::api::ListMatchesRequest* request, ::nakama::api::MatchList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListMatches_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListMatchesRequest, ::nakama::api::MatchList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListMatches_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::MatchList>* Nakama::Stub::AsyncListMatchesRaw(::grpc::ClientContext* context, const ::nakama::api::ListMatchesRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::MatchList>::Create(channel_.get(), cq, rpcmethod_ListMatches_, context, request, true);
+void Nakama::Stub::experimental_async::ListMatches(::grpc::ClientContext* context, const ::nakama::api::ListMatchesRequest* request, ::nakama::api::MatchList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListMatches_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::MatchList>* Nakama::Stub::PrepareAsyncListMatchesRaw(::grpc::ClientContext* context, const ::nakama::api::ListMatchesRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::MatchList>::Create(channel_.get(), cq, rpcmethod_ListMatches_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::MatchList, ::nakama::api::ListMatchesRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListMatches_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::MatchList>* Nakama::Stub::AsyncListMatchesRaw(::grpc::ClientContext* context, const ::nakama::api::ListMatchesRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListMatchesRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListNotifications(::grpc::ClientContext* context, const ::nakama::api::ListNotificationsRequest& request, ::nakama::api::NotificationList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListNotifications_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListNotificationsRequest, ::nakama::api::NotificationList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListNotifications_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListNotifications(::grpc::ClientContext* context, const ::nakama::api::ListNotificationsRequest* request, ::nakama::api::NotificationList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListNotifications_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListNotificationsRequest, ::nakama::api::NotificationList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListNotifications_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::NotificationList>* Nakama::Stub::AsyncListNotificationsRaw(::grpc::ClientContext* context, const ::nakama::api::ListNotificationsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::NotificationList>::Create(channel_.get(), cq, rpcmethod_ListNotifications_, context, request, true);
+void Nakama::Stub::experimental_async::ListNotifications(::grpc::ClientContext* context, const ::nakama::api::ListNotificationsRequest* request, ::nakama::api::NotificationList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListNotifications_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::NotificationList>* Nakama::Stub::PrepareAsyncListNotificationsRaw(::grpc::ClientContext* context, const ::nakama::api::ListNotificationsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::NotificationList>::Create(channel_.get(), cq, rpcmethod_ListNotifications_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::NotificationList, ::nakama::api::ListNotificationsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListNotifications_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::NotificationList>* Nakama::Stub::AsyncListNotificationsRaw(::grpc::ClientContext* context, const ::nakama::api::ListNotificationsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListNotificationsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListStorageObjects(::grpc::ClientContext* context, const ::nakama::api::ListStorageObjectsRequest& request, ::nakama::api::StorageObjectList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListStorageObjects_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListStorageObjectsRequest, ::nakama::api::StorageObjectList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListStorageObjects_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListStorageObjects(::grpc::ClientContext* context, const ::nakama::api::ListStorageObjectsRequest* request, ::nakama::api::StorageObjectList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListStorageObjects_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListStorageObjectsRequest, ::nakama::api::StorageObjectList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListStorageObjects_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjectList>* Nakama::Stub::AsyncListStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::ListStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::StorageObjectList>::Create(channel_.get(), cq, rpcmethod_ListStorageObjects_, context, request, true);
+void Nakama::Stub::experimental_async::ListStorageObjects(::grpc::ClientContext* context, const ::nakama::api::ListStorageObjectsRequest* request, ::nakama::api::StorageObjectList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListStorageObjects_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjectList>* Nakama::Stub::PrepareAsyncListStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::ListStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::StorageObjectList>::Create(channel_.get(), cq, rpcmethod_ListStorageObjects_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::StorageObjectList, ::nakama::api::ListStorageObjectsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListStorageObjects_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjectList>* Nakama::Stub::AsyncListStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::ListStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListStorageObjectsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListTournaments(::grpc::ClientContext* context, const ::nakama::api::ListTournamentsRequest& request, ::nakama::api::TournamentList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListTournaments_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListTournamentsRequest, ::nakama::api::TournamentList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListTournaments_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListTournaments(::grpc::ClientContext* context, const ::nakama::api::ListTournamentsRequest* request, ::nakama::api::TournamentList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListTournaments_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListTournamentsRequest, ::nakama::api::TournamentList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListTournaments_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentList>* Nakama::Stub::AsyncListTournamentsRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::TournamentList>::Create(channel_.get(), cq, rpcmethod_ListTournaments_, context, request, true);
+void Nakama::Stub::experimental_async::ListTournaments(::grpc::ClientContext* context, const ::nakama::api::ListTournamentsRequest* request, ::nakama::api::TournamentList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListTournaments_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentList>* Nakama::Stub::PrepareAsyncListTournamentsRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::TournamentList>::Create(channel_.get(), cq, rpcmethod_ListTournaments_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::TournamentList, ::nakama::api::ListTournamentsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListTournaments_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentList>* Nakama::Stub::AsyncListTournamentsRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListTournamentsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListTournamentRecords(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsRequest& request, ::nakama::api::TournamentRecordList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListTournamentRecords_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListTournamentRecordsRequest, ::nakama::api::TournamentRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListTournamentRecords_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListTournamentRecords(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsRequest* request, ::nakama::api::TournamentRecordList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListTournamentRecords_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListTournamentRecordsRequest, ::nakama::api::TournamentRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListTournamentRecords_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentRecordList>* Nakama::Stub::AsyncListTournamentRecordsRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::TournamentRecordList>::Create(channel_.get(), cq, rpcmethod_ListTournamentRecords_, context, request, true);
+void Nakama::Stub::experimental_async::ListTournamentRecords(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsRequest* request, ::nakama::api::TournamentRecordList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListTournamentRecords_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentRecordList>* Nakama::Stub::PrepareAsyncListTournamentRecordsRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::TournamentRecordList>::Create(channel_.get(), cq, rpcmethod_ListTournamentRecords_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::TournamentRecordList, ::nakama::api::ListTournamentRecordsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListTournamentRecords_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentRecordList>* Nakama::Stub::AsyncListTournamentRecordsRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListTournamentRecordsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListTournamentRecordsAroundOwner(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsAroundOwnerRequest& request, ::nakama::api::TournamentRecordList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListTournamentRecordsAroundOwner_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListTournamentRecordsAroundOwnerRequest, ::nakama::api::TournamentRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListTournamentRecordsAroundOwner_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListTournamentRecordsAroundOwner(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsAroundOwnerRequest* request, ::nakama::api::TournamentRecordList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListTournamentRecordsAroundOwner_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListTournamentRecordsAroundOwnerRequest, ::nakama::api::TournamentRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListTournamentRecordsAroundOwner_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentRecordList>* Nakama::Stub::AsyncListTournamentRecordsAroundOwnerRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsAroundOwnerRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::TournamentRecordList>::Create(channel_.get(), cq, rpcmethod_ListTournamentRecordsAroundOwner_, context, request, true);
+void Nakama::Stub::experimental_async::ListTournamentRecordsAroundOwner(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsAroundOwnerRequest* request, ::nakama::api::TournamentRecordList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListTournamentRecordsAroundOwner_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentRecordList>* Nakama::Stub::PrepareAsyncListTournamentRecordsAroundOwnerRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsAroundOwnerRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::TournamentRecordList>::Create(channel_.get(), cq, rpcmethod_ListTournamentRecordsAroundOwner_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::TournamentRecordList, ::nakama::api::ListTournamentRecordsAroundOwnerRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListTournamentRecordsAroundOwner_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::TournamentRecordList>* Nakama::Stub::AsyncListTournamentRecordsAroundOwnerRaw(::grpc::ClientContext* context, const ::nakama::api::ListTournamentRecordsAroundOwnerRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListTournamentRecordsAroundOwnerRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ListUserGroups(::grpc::ClientContext* context, const ::nakama::api::ListUserGroupsRequest& request, ::nakama::api::UserGroupList* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ListUserGroups_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ListUserGroupsRequest, ::nakama::api::UserGroupList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ListUserGroups_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ListUserGroups(::grpc::ClientContext* context, const ::nakama::api::ListUserGroupsRequest* request, ::nakama::api::UserGroupList* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ListUserGroups_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ListUserGroupsRequest, ::nakama::api::UserGroupList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListUserGroups_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::UserGroupList>* Nakama::Stub::AsyncListUserGroupsRaw(::grpc::ClientContext* context, const ::nakama::api::ListUserGroupsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::UserGroupList>::Create(channel_.get(), cq, rpcmethod_ListUserGroups_, context, request, true);
+void Nakama::Stub::experimental_async::ListUserGroups(::grpc::ClientContext* context, const ::nakama::api::ListUserGroupsRequest* request, ::nakama::api::UserGroupList* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ListUserGroups_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::UserGroupList>* Nakama::Stub::PrepareAsyncListUserGroupsRaw(::grpc::ClientContext* context, const ::nakama::api::ListUserGroupsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::UserGroupList>::Create(channel_.get(), cq, rpcmethod_ListUserGroups_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::UserGroupList, ::nakama::api::ListUserGroupsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ListUserGroups_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::UserGroupList>* Nakama::Stub::AsyncListUserGroupsRaw(::grpc::ClientContext* context, const ::nakama::api::ListUserGroupsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncListUserGroupsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::PromoteGroupUsers(::grpc::ClientContext* context, const ::nakama::api::PromoteGroupUsersRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_PromoteGroupUsers_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::PromoteGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_PromoteGroupUsers_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::PromoteGroupUsers(::grpc::ClientContext* context, const ::nakama::api::PromoteGroupUsersRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_PromoteGroupUsers_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::PromoteGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_PromoteGroupUsers_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncPromoteGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::PromoteGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_PromoteGroupUsers_, context, request, true);
+void Nakama::Stub::experimental_async::PromoteGroupUsers(::grpc::ClientContext* context, const ::nakama::api::PromoteGroupUsersRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_PromoteGroupUsers_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncPromoteGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::PromoteGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_PromoteGroupUsers_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::PromoteGroupUsersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_PromoteGroupUsers_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncPromoteGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::PromoteGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncPromoteGroupUsersRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::DemoteGroupUsers(::grpc::ClientContext* context, const ::nakama::api::DemoteGroupUsersRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_DemoteGroupUsers_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::DemoteGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_DemoteGroupUsers_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::DemoteGroupUsers(::grpc::ClientContext* context, const ::nakama::api::DemoteGroupUsersRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_DemoteGroupUsers_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::DemoteGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DemoteGroupUsers_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDemoteGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::DemoteGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DemoteGroupUsers_, context, request, true);
+void Nakama::Stub::experimental_async::DemoteGroupUsers(::grpc::ClientContext* context, const ::nakama::api::DemoteGroupUsersRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_DemoteGroupUsers_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncDemoteGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::DemoteGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_DemoteGroupUsers_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::DemoteGroupUsersRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_DemoteGroupUsers_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncDemoteGroupUsersRaw(::grpc::ClientContext* context, const ::nakama::api::DemoteGroupUsersRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncDemoteGroupUsersRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::ReadStorageObjects(::grpc::ClientContext* context, const ::nakama::api::ReadStorageObjectsRequest& request, ::nakama::api::StorageObjects* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ReadStorageObjects_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ReadStorageObjectsRequest, ::nakama::api::StorageObjects, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ReadStorageObjects_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::ReadStorageObjects(::grpc::ClientContext* context, const ::nakama::api::ReadStorageObjectsRequest* request, ::nakama::api::StorageObjects* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_ReadStorageObjects_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ReadStorageObjectsRequest, ::nakama::api::StorageObjects, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReadStorageObjects_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjects>* Nakama::Stub::AsyncReadStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::ReadStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::StorageObjects>::Create(channel_.get(), cq, rpcmethod_ReadStorageObjects_, context, request, true);
+void Nakama::Stub::experimental_async::ReadStorageObjects(::grpc::ClientContext* context, const ::nakama::api::ReadStorageObjectsRequest* request, ::nakama::api::StorageObjects* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReadStorageObjects_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjects>* Nakama::Stub::PrepareAsyncReadStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::ReadStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::StorageObjects>::Create(channel_.get(), cq, rpcmethod_ReadStorageObjects_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::StorageObjects, ::nakama::api::ReadStorageObjectsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ReadStorageObjects_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjects>* Nakama::Stub::AsyncReadStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::ReadStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncReadStorageObjectsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::RpcFunc(::grpc::ClientContext* context, const ::nakama::api::Rpc& request, ::nakama::api::Rpc* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_RpcFunc_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::Rpc, ::nakama::api::Rpc, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RpcFunc_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::RpcFunc(::grpc::ClientContext* context, const ::nakama::api::Rpc* request, ::nakama::api::Rpc* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_RpcFunc_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::Rpc, ::nakama::api::Rpc, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RpcFunc_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::Rpc>* Nakama::Stub::AsyncRpcFuncRaw(::grpc::ClientContext* context, const ::nakama::api::Rpc& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Rpc>::Create(channel_.get(), cq, rpcmethod_RpcFunc_, context, request, true);
+void Nakama::Stub::experimental_async::RpcFunc(::grpc::ClientContext* context, const ::nakama::api::Rpc* request, ::nakama::api::Rpc* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RpcFunc_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::Rpc>* Nakama::Stub::PrepareAsyncRpcFuncRaw(::grpc::ClientContext* context, const ::nakama::api::Rpc& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::Rpc>::Create(channel_.get(), cq, rpcmethod_RpcFunc_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::Rpc, ::nakama::api::Rpc, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RpcFunc_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::Rpc>* Nakama::Stub::AsyncRpcFuncRaw(::grpc::ClientContext* context, const ::nakama::api::Rpc& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRpcFuncRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkApple(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkApple_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountApple, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkApple_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkApple(::grpc::ClientContext* context, const ::nakama::api::AccountApple* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkApple_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountApple, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkApple_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkApple_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkApple(::grpc::ClientContext* context, const ::nakama::api::AccountApple* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkApple_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkApple_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountApple, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkApple_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkAppleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountApple& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkAppleRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkCustom(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkCustom_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountCustom, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkCustom_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkCustom(::grpc::ClientContext* context, const ::nakama::api::AccountCustom* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkCustom_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountCustom, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkCustom_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkCustom_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkCustom(::grpc::ClientContext* context, const ::nakama::api::AccountCustom* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkCustom_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkCustom_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountCustom, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkCustom_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkCustomRaw(::grpc::ClientContext* context, const ::nakama::api::AccountCustom& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkCustomRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkDevice(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkDevice_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountDevice, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkDevice_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkDevice(::grpc::ClientContext* context, const ::nakama::api::AccountDevice* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkDevice_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountDevice, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkDevice_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkDevice_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkDevice(::grpc::ClientContext* context, const ::nakama::api::AccountDevice* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkDevice_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkDevice_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountDevice, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkDevice_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkDeviceRaw(::grpc::ClientContext* context, const ::nakama::api::AccountDevice& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkDeviceRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkEmail(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkEmail_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountEmail, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkEmail_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkEmail(::grpc::ClientContext* context, const ::nakama::api::AccountEmail* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkEmail_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountEmail, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkEmail_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkEmail_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkEmail(::grpc::ClientContext* context, const ::nakama::api::AccountEmail* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkEmail_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkEmail_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountEmail, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkEmail_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkEmailRaw(::grpc::ClientContext* context, const ::nakama::api::AccountEmail& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkEmailRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkFacebook(::grpc::ClientContext* context, const ::nakama::api::AccountFacebook& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkFacebook_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountFacebook, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkFacebook_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkFacebook(::grpc::ClientContext* context, const ::nakama::api::AccountFacebook* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkFacebook_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountFacebook, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkFacebook_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebook& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkFacebook_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkFacebook(::grpc::ClientContext* context, const ::nakama::api::AccountFacebook* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkFacebook_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebook& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkFacebook_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountFacebook, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkFacebook_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkFacebookRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebook& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkFacebookRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkFacebookInstantGame_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkFacebookInstantGame_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkFacebookInstantGame_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkFacebookInstantGame_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkFacebookInstantGame_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkFacebookInstantGame(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkFacebookInstantGame_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkFacebookInstantGame_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountFacebookInstantGame, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkFacebookInstantGame_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkFacebookInstantGameRaw(::grpc::ClientContext* context, const ::nakama::api::AccountFacebookInstantGame& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkFacebookInstantGameRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkGameCenter(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkGameCenter_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountGameCenter, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkGameCenter_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkGameCenter(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkGameCenter_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountGameCenter, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkGameCenter_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkGameCenter_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkGameCenter(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkGameCenter_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkGameCenter_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountGameCenter, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkGameCenter_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkGameCenterRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGameCenter& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkGameCenterRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkGoogle(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkGoogle_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountGoogle, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkGoogle_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkGoogle(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkGoogle_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountGoogle, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkGoogle_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkGoogle_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkGoogle(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkGoogle_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkGoogle_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountGoogle, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkGoogle_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::AccountGoogle& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkGoogleRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UnlinkSteam(::grpc::ClientContext* context, const ::nakama::api::AccountSteam& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UnlinkSteam_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::AccountSteam, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UnlinkSteam_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UnlinkSteam(::grpc::ClientContext* context, const ::nakama::api::AccountSteam* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UnlinkSteam_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::AccountSteam, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkSteam_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AccountSteam& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkSteam_, context, request, true);
+void Nakama::Stub::experimental_async::UnlinkSteam(::grpc::ClientContext* context, const ::nakama::api::AccountSteam* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UnlinkSteam_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUnlinkSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AccountSteam& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UnlinkSteam_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::AccountSteam, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UnlinkSteam_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUnlinkSteamRaw(::grpc::ClientContext* context, const ::nakama::api::AccountSteam& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUnlinkSteamRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UpdateAccount(::grpc::ClientContext* context, const ::nakama::api::UpdateAccountRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UpdateAccount_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::UpdateAccountRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UpdateAccount_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UpdateAccount(::grpc::ClientContext* context, const ::nakama::api::UpdateAccountRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UpdateAccount_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::UpdateAccountRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UpdateAccount_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUpdateAccountRaw(::grpc::ClientContext* context, const ::nakama::api::UpdateAccountRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UpdateAccount_, context, request, true);
+void Nakama::Stub::experimental_async::UpdateAccount(::grpc::ClientContext* context, const ::nakama::api::UpdateAccountRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UpdateAccount_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUpdateAccountRaw(::grpc::ClientContext* context, const ::nakama::api::UpdateAccountRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UpdateAccount_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::UpdateAccountRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UpdateAccount_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUpdateAccountRaw(::grpc::ClientContext* context, const ::nakama::api::UpdateAccountRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUpdateAccountRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::UpdateGroup(::grpc::ClientContext* context, const ::nakama::api::UpdateGroupRequest& request, ::google::protobuf::Empty* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_UpdateGroup_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::UpdateGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_UpdateGroup_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::UpdateGroup(::grpc::ClientContext* context, const ::nakama::api::UpdateGroupRequest* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_UpdateGroup_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::UpdateGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UpdateGroup_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUpdateGroupRaw(::grpc::ClientContext* context, const ::nakama::api::UpdateGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UpdateGroup_, context, request, true);
+void Nakama::Stub::experimental_async::UpdateGroup(::grpc::ClientContext* context, const ::nakama::api::UpdateGroupRequest* request, ::google::protobuf::Empty* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_UpdateGroup_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::PrepareAsyncUpdateGroupRaw(::grpc::ClientContext* context, const ::nakama::api::UpdateGroupRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::google::protobuf::Empty>::Create(channel_.get(), cq, rpcmethod_UpdateGroup_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::google::protobuf::Empty, ::nakama::api::UpdateGroupRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_UpdateGroup_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* Nakama::Stub::AsyncUpdateGroupRaw(::grpc::ClientContext* context, const ::nakama::api::UpdateGroupRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncUpdateGroupRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Nakama::Stub::ValidatePurchaseApple(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseAppleRequest& request, ::nakama::api::ValidatePurchaseResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ValidatePurchaseAppleRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ValidatePurchaseApple_, context, request, response);
+}
+
+void Nakama::Stub::experimental_async::ValidatePurchaseApple(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseAppleRequest* request, ::nakama::api::ValidatePurchaseResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ValidatePurchaseAppleRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ValidatePurchaseApple_, context, request, response, std::move(f));
+}
+
+void Nakama::Stub::experimental_async::ValidatePurchaseApple(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseAppleRequest* request, ::nakama::api::ValidatePurchaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ValidatePurchaseApple_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::ValidatePurchaseResponse>* Nakama::Stub::PrepareAsyncValidatePurchaseAppleRaw(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseAppleRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::ValidatePurchaseResponse, ::nakama::api::ValidatePurchaseAppleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ValidatePurchaseApple_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::ValidatePurchaseResponse>* Nakama::Stub::AsyncValidatePurchaseAppleRaw(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseAppleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncValidatePurchaseAppleRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Nakama::Stub::ValidatePurchaseGoogle(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseGoogleRequest& request, ::nakama::api::ValidatePurchaseResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ValidatePurchaseGoogleRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ValidatePurchaseGoogle_, context, request, response);
+}
+
+void Nakama::Stub::experimental_async::ValidatePurchaseGoogle(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseGoogleRequest* request, ::nakama::api::ValidatePurchaseResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ValidatePurchaseGoogleRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ValidatePurchaseGoogle_, context, request, response, std::move(f));
+}
+
+void Nakama::Stub::experimental_async::ValidatePurchaseGoogle(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseGoogleRequest* request, ::nakama::api::ValidatePurchaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ValidatePurchaseGoogle_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::ValidatePurchaseResponse>* Nakama::Stub::PrepareAsyncValidatePurchaseGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseGoogleRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::ValidatePurchaseResponse, ::nakama::api::ValidatePurchaseGoogleRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ValidatePurchaseGoogle_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::ValidatePurchaseResponse>* Nakama::Stub::AsyncValidatePurchaseGoogleRaw(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseGoogleRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncValidatePurchaseGoogleRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status Nakama::Stub::ValidatePurchaseHuawei(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseHuaweiRequest& request, ::nakama::api::ValidatePurchaseResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::ValidatePurchaseHuaweiRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ValidatePurchaseHuawei_, context, request, response);
+}
+
+void Nakama::Stub::experimental_async::ValidatePurchaseHuawei(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseHuaweiRequest* request, ::nakama::api::ValidatePurchaseResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::ValidatePurchaseHuaweiRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ValidatePurchaseHuawei_, context, request, response, std::move(f));
+}
+
+void Nakama::Stub::experimental_async::ValidatePurchaseHuawei(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseHuaweiRequest* request, ::nakama::api::ValidatePurchaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ValidatePurchaseHuawei_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::ValidatePurchaseResponse>* Nakama::Stub::PrepareAsyncValidatePurchaseHuaweiRaw(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseHuaweiRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::ValidatePurchaseResponse, ::nakama::api::ValidatePurchaseHuaweiRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ValidatePurchaseHuawei_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::ValidatePurchaseResponse>* Nakama::Stub::AsyncValidatePurchaseHuaweiRaw(::grpc::ClientContext* context, const ::nakama::api::ValidatePurchaseHuaweiRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncValidatePurchaseHuaweiRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::WriteLeaderboardRecord(::grpc::ClientContext* context, const ::nakama::api::WriteLeaderboardRecordRequest& request, ::nakama::api::LeaderboardRecord* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_WriteLeaderboardRecord_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::WriteLeaderboardRecordRequest, ::nakama::api::LeaderboardRecord, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_WriteLeaderboardRecord_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::WriteLeaderboardRecord(::grpc::ClientContext* context, const ::nakama::api::WriteLeaderboardRecordRequest* request, ::nakama::api::LeaderboardRecord* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_WriteLeaderboardRecord_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::WriteLeaderboardRecordRequest, ::nakama::api::LeaderboardRecord, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_WriteLeaderboardRecord_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecord>* Nakama::Stub::AsyncWriteLeaderboardRecordRaw(::grpc::ClientContext* context, const ::nakama::api::WriteLeaderboardRecordRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecord>::Create(channel_.get(), cq, rpcmethod_WriteLeaderboardRecord_, context, request, true);
+void Nakama::Stub::experimental_async::WriteLeaderboardRecord(::grpc::ClientContext* context, const ::nakama::api::WriteLeaderboardRecordRequest* request, ::nakama::api::LeaderboardRecord* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_WriteLeaderboardRecord_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecord>* Nakama::Stub::PrepareAsyncWriteLeaderboardRecordRaw(::grpc::ClientContext* context, const ::nakama::api::WriteLeaderboardRecordRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecord>::Create(channel_.get(), cq, rpcmethod_WriteLeaderboardRecord_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::LeaderboardRecord, ::nakama::api::WriteLeaderboardRecordRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_WriteLeaderboardRecord_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecord>* Nakama::Stub::AsyncWriteLeaderboardRecordRaw(::grpc::ClientContext* context, const ::nakama::api::WriteLeaderboardRecordRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncWriteLeaderboardRecordRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::WriteStorageObjects(::grpc::ClientContext* context, const ::nakama::api::WriteStorageObjectsRequest& request, ::nakama::api::StorageObjectAcks* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_WriteStorageObjects_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::WriteStorageObjectsRequest, ::nakama::api::StorageObjectAcks, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_WriteStorageObjects_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::WriteStorageObjects(::grpc::ClientContext* context, const ::nakama::api::WriteStorageObjectsRequest* request, ::nakama::api::StorageObjectAcks* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_WriteStorageObjects_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::WriteStorageObjectsRequest, ::nakama::api::StorageObjectAcks, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_WriteStorageObjects_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjectAcks>* Nakama::Stub::AsyncWriteStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::WriteStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::StorageObjectAcks>::Create(channel_.get(), cq, rpcmethod_WriteStorageObjects_, context, request, true);
+void Nakama::Stub::experimental_async::WriteStorageObjects(::grpc::ClientContext* context, const ::nakama::api::WriteStorageObjectsRequest* request, ::nakama::api::StorageObjectAcks* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_WriteStorageObjects_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjectAcks>* Nakama::Stub::PrepareAsyncWriteStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::WriteStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::StorageObjectAcks>::Create(channel_.get(), cq, rpcmethod_WriteStorageObjects_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::StorageObjectAcks, ::nakama::api::WriteStorageObjectsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_WriteStorageObjects_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::StorageObjectAcks>* Nakama::Stub::AsyncWriteStorageObjectsRaw(::grpc::ClientContext* context, const ::nakama::api::WriteStorageObjectsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncWriteStorageObjectsRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 ::grpc::Status Nakama::Stub::WriteTournamentRecord(::grpc::ClientContext* context, const ::nakama::api::WriteTournamentRecordRequest& request, ::nakama::api::LeaderboardRecord* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_WriteTournamentRecord_, context, request, response);
+  return ::grpc::internal::BlockingUnaryCall< ::nakama::api::WriteTournamentRecordRequest, ::nakama::api::LeaderboardRecord, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_WriteTournamentRecord_, context, request, response);
 }
 
 void Nakama::Stub::experimental_async::WriteTournamentRecord(::grpc::ClientContext* context, const ::nakama::api::WriteTournamentRecordRequest* request, ::nakama::api::LeaderboardRecord* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_WriteTournamentRecord_, context, request, response, std::move(f));
+  ::grpc::internal::CallbackUnaryCall< ::nakama::api::WriteTournamentRecordRequest, ::nakama::api::LeaderboardRecord, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_WriteTournamentRecord_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecord>* Nakama::Stub::AsyncWriteTournamentRecordRaw(::grpc::ClientContext* context, const ::nakama::api::WriteTournamentRecordRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecord>::Create(channel_.get(), cq, rpcmethod_WriteTournamentRecord_, context, request, true);
+void Nakama::Stub::experimental_async::WriteTournamentRecord(::grpc::ClientContext* context, const ::nakama::api::WriteTournamentRecordRequest* request, ::nakama::api::LeaderboardRecord* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_WriteTournamentRecord_, context, request, response, reactor);
 }
 
 ::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecord>* Nakama::Stub::PrepareAsyncWriteTournamentRecordRaw(::grpc::ClientContext* context, const ::nakama::api::WriteTournamentRecordRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::nakama::api::LeaderboardRecord>::Create(channel_.get(), cq, rpcmethod_WriteTournamentRecord_, context, request, false);
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::nakama::api::LeaderboardRecord, ::nakama::api::WriteTournamentRecordRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_WriteTournamentRecord_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::nakama::api::LeaderboardRecord>* Nakama::Stub::AsyncWriteTournamentRecordRaw(::grpc::ClientContext* context, const ::nakama::api::WriteTournamentRecordRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncWriteTournamentRecordRaw(context, request, cq);
+  result->StartCall();
+  return result;
 }
 
 Nakama::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AddFriendsRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::AddFriends), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AddFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AddFriendsRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->AddFriends(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[1],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AddGroupUsersRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::AddGroupUsers), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AddGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AddGroupUsersRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->AddGroupUsers(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateAppleRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateApple), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::SessionRefreshRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::SessionRefreshRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->SessionRefresh(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[3],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateCustomRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateCustom), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::SessionLogoutRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::SessionLogoutRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->SessionLogout(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[4],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateDeviceRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateDevice), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateAppleRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateAppleRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateApple(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[5],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateEmailRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateEmail), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateCustomRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateCustomRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateCustom(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[6],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateFacebookRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateFacebook), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateDeviceRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateDeviceRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateDevice(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[7],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateFacebookInstantGameRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateFacebookInstantGame), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateEmailRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateEmailRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateEmail(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[8],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateGameCenterRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateGameCenter), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateFacebookRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateFacebookRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateFacebook(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[9],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateGoogleRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateGoogle), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateFacebookInstantGameRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateFacebookInstantGameRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateFacebookInstantGame(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[10],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateSteamRequest, ::nakama::api::Session>(
-          std::mem_fn(&Nakama::Service::AuthenticateSteam), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateGameCenterRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateGameCenterRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateGameCenter(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[11],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::BanGroupUsersRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::BanGroupUsers), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateGoogleRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateGoogleRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateGoogle(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[12],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::BlockFriendsRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::BlockFriends), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AuthenticateSteamRequest, ::nakama::api::Session, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AuthenticateSteamRequest* req,
+             ::nakama::api::Session* resp) {
+               return service->AuthenticateSteam(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[13],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::CreateGroupRequest, ::nakama::api::Group>(
-          std::mem_fn(&Nakama::Service::CreateGroup), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::BanGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::BanGroupUsersRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->BanGroupUsers(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[14],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteFriendsRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::DeleteFriends), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::BlockFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::BlockFriendsRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->BlockFriends(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[15],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteGroupRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::DeleteGroup), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::CreateGroupRequest, ::nakama::api::Group, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::CreateGroupRequest* req,
+             ::nakama::api::Group* resp) {
+               return service->CreateGroup(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[16],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteLeaderboardRecordRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::DeleteLeaderboardRecord), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::DeleteFriendsRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->DeleteFriends(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[17],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteNotificationsRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::DeleteNotifications), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::DeleteGroupRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->DeleteGroup(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[18],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteStorageObjectsRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::DeleteStorageObjects), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteLeaderboardRecordRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::DeleteLeaderboardRecordRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->DeleteLeaderboardRecord(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[19],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::Event, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::Event), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteNotificationsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::DeleteNotificationsRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->DeleteNotifications(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[20],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::google::protobuf::Empty, ::nakama::api::Account>(
-          std::mem_fn(&Nakama::Service::GetAccount), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DeleteStorageObjectsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::DeleteStorageObjectsRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->DeleteStorageObjects(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[21],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::GetUsersRequest, ::nakama::api::Users>(
-          std::mem_fn(&Nakama::Service::GetUsers), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::Event, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::Event* req,
+             ::google::protobuf::Empty* resp) {
+               return service->Event(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[22],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::google::protobuf::Empty, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::Healthcheck), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::google::protobuf::Empty, ::nakama::api::Account, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::google::protobuf::Empty* req,
+             ::nakama::api::Account* resp) {
+               return service->GetAccount(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[23],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ImportFacebookFriendsRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::ImportFacebookFriends), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::GetUsersRequest, ::nakama::api::Users, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::GetUsersRequest* req,
+             ::nakama::api::Users* resp) {
+               return service->GetUsers(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[24],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::JoinGroupRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::JoinGroup), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::google::protobuf::Empty, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::google::protobuf::Empty* req,
+             ::google::protobuf::Empty* resp) {
+               return service->Healthcheck(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[25],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::JoinTournamentRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::JoinTournament), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ImportFacebookFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ImportFacebookFriendsRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->ImportFacebookFriends(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[26],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::KickGroupUsersRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::KickGroupUsers), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ImportSteamFriendsRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ImportSteamFriendsRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->ImportSteamFriends(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[27],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::LeaveGroupRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LeaveGroup), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::JoinGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::JoinGroupRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->JoinGroup(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[28],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountApple, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkApple), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::JoinTournamentRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::JoinTournamentRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->JoinTournament(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[29],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountCustom, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkCustom), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::KickGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::KickGroupUsersRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->KickGroupUsers(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[30],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountDevice, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkDevice), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::LeaveGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::LeaveGroupRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LeaveGroup(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[31],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountEmail, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkEmail), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountApple, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountApple* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkApple(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[32],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::LinkFacebookRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkFacebook), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountCustom, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountCustom* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkCustom(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[33],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkFacebookInstantGame), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountDevice, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountDevice* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkDevice(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[34],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGameCenter, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkGameCenter), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountEmail, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountEmail* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkEmail(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[35],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGoogle, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkGoogle), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::LinkFacebookRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::LinkFacebookRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkFacebook(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[36],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountSteam, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::LinkSteam), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountFacebookInstantGame* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkFacebookInstantGame(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[37],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListChannelMessagesRequest, ::nakama::api::ChannelMessageList>(
-          std::mem_fn(&Nakama::Service::ListChannelMessages), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGameCenter, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountGameCenter* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkGameCenter(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[38],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListFriendsRequest, ::nakama::api::FriendList>(
-          std::mem_fn(&Nakama::Service::ListFriends), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGoogle, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountGoogle* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkGoogle(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[39],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListGroupsRequest, ::nakama::api::GroupList>(
-          std::mem_fn(&Nakama::Service::ListGroups), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::LinkSteamRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::LinkSteamRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->LinkSteam(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[40],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListGroupUsersRequest, ::nakama::api::GroupUserList>(
-          std::mem_fn(&Nakama::Service::ListGroupUsers), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListChannelMessagesRequest, ::nakama::api::ChannelMessageList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListChannelMessagesRequest* req,
+             ::nakama::api::ChannelMessageList* resp) {
+               return service->ListChannelMessages(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[41],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListLeaderboardRecordsRequest, ::nakama::api::LeaderboardRecordList>(
-          std::mem_fn(&Nakama::Service::ListLeaderboardRecords), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListFriendsRequest, ::nakama::api::FriendList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListFriendsRequest* req,
+             ::nakama::api::FriendList* resp) {
+               return service->ListFriends(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[42],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest, ::nakama::api::LeaderboardRecordList>(
-          std::mem_fn(&Nakama::Service::ListLeaderboardRecordsAroundOwner), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListGroupsRequest, ::nakama::api::GroupList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListGroupsRequest* req,
+             ::nakama::api::GroupList* resp) {
+               return service->ListGroups(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[43],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListMatchesRequest, ::nakama::api::MatchList>(
-          std::mem_fn(&Nakama::Service::ListMatches), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListGroupUsersRequest, ::nakama::api::GroupUserList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListGroupUsersRequest* req,
+             ::nakama::api::GroupUserList* resp) {
+               return service->ListGroupUsers(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[44],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListNotificationsRequest, ::nakama::api::NotificationList>(
-          std::mem_fn(&Nakama::Service::ListNotifications), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListLeaderboardRecordsRequest, ::nakama::api::LeaderboardRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListLeaderboardRecordsRequest* req,
+             ::nakama::api::LeaderboardRecordList* resp) {
+               return service->ListLeaderboardRecords(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[45],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListStorageObjectsRequest, ::nakama::api::StorageObjectList>(
-          std::mem_fn(&Nakama::Service::ListStorageObjects), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest, ::nakama::api::LeaderboardRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListLeaderboardRecordsAroundOwnerRequest* req,
+             ::nakama::api::LeaderboardRecordList* resp) {
+               return service->ListLeaderboardRecordsAroundOwner(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[46],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListTournamentsRequest, ::nakama::api::TournamentList>(
-          std::mem_fn(&Nakama::Service::ListTournaments), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListMatchesRequest, ::nakama::api::MatchList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListMatchesRequest* req,
+             ::nakama::api::MatchList* resp) {
+               return service->ListMatches(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[47],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListTournamentRecordsRequest, ::nakama::api::TournamentRecordList>(
-          std::mem_fn(&Nakama::Service::ListTournamentRecords), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListNotificationsRequest, ::nakama::api::NotificationList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListNotificationsRequest* req,
+             ::nakama::api::NotificationList* resp) {
+               return service->ListNotifications(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[48],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListTournamentRecordsAroundOwnerRequest, ::nakama::api::TournamentRecordList>(
-          std::mem_fn(&Nakama::Service::ListTournamentRecordsAroundOwner), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListStorageObjectsRequest, ::nakama::api::StorageObjectList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListStorageObjectsRequest* req,
+             ::nakama::api::StorageObjectList* resp) {
+               return service->ListStorageObjects(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[49],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListUserGroupsRequest, ::nakama::api::UserGroupList>(
-          std::mem_fn(&Nakama::Service::ListUserGroups), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListTournamentsRequest, ::nakama::api::TournamentList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListTournamentsRequest* req,
+             ::nakama::api::TournamentList* resp) {
+               return service->ListTournaments(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[50],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::PromoteGroupUsersRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::PromoteGroupUsers), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListTournamentRecordsRequest, ::nakama::api::TournamentRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListTournamentRecordsRequest* req,
+             ::nakama::api::TournamentRecordList* resp) {
+               return service->ListTournamentRecords(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[51],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DemoteGroupUsersRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::DemoteGroupUsers), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListTournamentRecordsAroundOwnerRequest, ::nakama::api::TournamentRecordList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListTournamentRecordsAroundOwnerRequest* req,
+             ::nakama::api::TournamentRecordList* resp) {
+               return service->ListTournamentRecordsAroundOwner(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[52],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ReadStorageObjectsRequest, ::nakama::api::StorageObjects>(
-          std::mem_fn(&Nakama::Service::ReadStorageObjects), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ListUserGroupsRequest, ::nakama::api::UserGroupList, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ListUserGroupsRequest* req,
+             ::nakama::api::UserGroupList* resp) {
+               return service->ListUserGroups(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[53],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::Rpc, ::nakama::api::Rpc>(
-          std::mem_fn(&Nakama::Service::RpcFunc), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::PromoteGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::PromoteGroupUsersRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->PromoteGroupUsers(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[54],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountApple, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkApple), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::DemoteGroupUsersRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::DemoteGroupUsersRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->DemoteGroupUsers(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[55],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountCustom, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkCustom), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ReadStorageObjectsRequest, ::nakama::api::StorageObjects, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ReadStorageObjectsRequest* req,
+             ::nakama::api::StorageObjects* resp) {
+               return service->ReadStorageObjects(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[56],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountDevice, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkDevice), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::Rpc, ::nakama::api::Rpc, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::Rpc* req,
+             ::nakama::api::Rpc* resp) {
+               return service->RpcFunc(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[57],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountEmail, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkEmail), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountApple, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountApple* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkApple(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[58],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountFacebook, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkFacebook), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountCustom, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountCustom* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkCustom(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[59],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkFacebookInstantGame), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountDevice, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountDevice* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkDevice(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[60],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGameCenter, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkGameCenter), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountEmail, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountEmail* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkEmail(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[61],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGoogle, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkGoogle), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountFacebook, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountFacebook* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkFacebook(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[62],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountSteam, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UnlinkSteam), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountFacebookInstantGame, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountFacebookInstantGame* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkFacebookInstantGame(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[63],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::UpdateAccountRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UpdateAccount), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGameCenter, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountGameCenter* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkGameCenter(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[64],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::UpdateGroupRequest, ::google::protobuf::Empty>(
-          std::mem_fn(&Nakama::Service::UpdateGroup), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountGoogle, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountGoogle* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkGoogle(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[65],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::WriteLeaderboardRecordRequest, ::nakama::api::LeaderboardRecord>(
-          std::mem_fn(&Nakama::Service::WriteLeaderboardRecord), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::AccountSteam, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::AccountSteam* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UnlinkSteam(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[66],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::WriteStorageObjectsRequest, ::nakama::api::StorageObjectAcks>(
-          std::mem_fn(&Nakama::Service::WriteStorageObjects), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::UpdateAccountRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::UpdateAccountRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UpdateAccount(ctx, req, resp);
+             }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Nakama_method_names[67],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::WriteTournamentRecordRequest, ::nakama::api::LeaderboardRecord>(
-          std::mem_fn(&Nakama::Service::WriteTournamentRecord), this)));
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::UpdateGroupRequest, ::google::protobuf::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::UpdateGroupRequest* req,
+             ::google::protobuf::Empty* resp) {
+               return service->UpdateGroup(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Nakama_method_names[68],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ValidatePurchaseAppleRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ValidatePurchaseAppleRequest* req,
+             ::nakama::api::ValidatePurchaseResponse* resp) {
+               return service->ValidatePurchaseApple(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Nakama_method_names[69],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ValidatePurchaseGoogleRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ValidatePurchaseGoogleRequest* req,
+             ::nakama::api::ValidatePurchaseResponse* resp) {
+               return service->ValidatePurchaseGoogle(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Nakama_method_names[70],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::ValidatePurchaseHuaweiRequest, ::nakama::api::ValidatePurchaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::ValidatePurchaseHuaweiRequest* req,
+             ::nakama::api::ValidatePurchaseResponse* resp) {
+               return service->ValidatePurchaseHuawei(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Nakama_method_names[71],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::WriteLeaderboardRecordRequest, ::nakama::api::LeaderboardRecord, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::WriteLeaderboardRecordRequest* req,
+             ::nakama::api::LeaderboardRecord* resp) {
+               return service->WriteLeaderboardRecord(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Nakama_method_names[72],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::WriteStorageObjectsRequest, ::nakama::api::StorageObjectAcks, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::WriteStorageObjectsRequest* req,
+             ::nakama::api::StorageObjectAcks* resp) {
+               return service->WriteStorageObjects(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      Nakama_method_names[73],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< Nakama::Service, ::nakama::api::WriteTournamentRecordRequest, ::nakama::api::LeaderboardRecord, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](Nakama::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::nakama::api::WriteTournamentRecordRequest* req,
+             ::nakama::api::LeaderboardRecord* resp) {
+               return service->WriteTournamentRecord(ctx, req, resp);
+             }, this)));
 }
 
 Nakama::Service::~Service() {
@@ -1611,6 +2638,20 @@ Nakama::Service::~Service() {
 }
 
 ::grpc::Status Nakama::Service::AddGroupUsers(::grpc::ServerContext* context, const ::nakama::api::AddGroupUsersRequest* request, ::google::protobuf::Empty* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Nakama::Service::SessionRefresh(::grpc::ServerContext* context, const ::nakama::api::SessionRefreshRequest* request, ::nakama::api::Session* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Nakama::Service::SessionLogout(::grpc::ServerContext* context, const ::nakama::api::SessionLogoutRequest* request, ::google::protobuf::Empty* response) {
   (void) context;
   (void) request;
   (void) response;
@@ -1771,6 +2812,13 @@ Nakama::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
+::grpc::Status Nakama::Service::ImportSteamFriends(::grpc::ServerContext* context, const ::nakama::api::ImportSteamFriendsRequest* request, ::google::protobuf::Empty* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
 ::grpc::Status Nakama::Service::JoinGroup(::grpc::ServerContext* context, const ::nakama::api::JoinGroupRequest* request, ::google::protobuf::Empty* response) {
   (void) context;
   (void) request;
@@ -1855,7 +2903,7 @@ Nakama::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status Nakama::Service::LinkSteam(::grpc::ServerContext* context, const ::nakama::api::AccountSteam* request, ::google::protobuf::Empty* response) {
+::grpc::Status Nakama::Service::LinkSteam(::grpc::ServerContext* context, const ::nakama::api::LinkSteamRequest* request, ::google::protobuf::Empty* response) {
   (void) context;
   (void) request;
   (void) response;
@@ -2058,6 +3106,27 @@ Nakama::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
+::grpc::Status Nakama::Service::ValidatePurchaseApple(::grpc::ServerContext* context, const ::nakama::api::ValidatePurchaseAppleRequest* request, ::nakama::api::ValidatePurchaseResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Nakama::Service::ValidatePurchaseGoogle(::grpc::ServerContext* context, const ::nakama::api::ValidatePurchaseGoogleRequest* request, ::nakama::api::ValidatePurchaseResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Nakama::Service::ValidatePurchaseHuawei(::grpc::ServerContext* context, const ::nakama::api::ValidatePurchaseHuaweiRequest* request, ::nakama::api::ValidatePurchaseResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
 ::grpc::Status Nakama::Service::WriteLeaderboardRecord(::grpc::ServerContext* context, const ::nakama::api::WriteLeaderboardRecordRequest* request, ::nakama::api::LeaderboardRecord* response) {
   (void) context;
   (void) request;
@@ -2083,4 +3152,3 @@ Nakama::Service::~Service() {
 }  // namespace nakama
 }  // namespace api
 
-#endif  // BUILD_GRPC_CLIENT

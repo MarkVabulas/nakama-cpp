@@ -17,7 +17,7 @@
 #pragma once
 
 #include "nakama-cpp/NExport.h"
-#include "nonstd/optional.hpp"
+#include <optional>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -58,7 +58,7 @@ NAKAMA_NAMESPACE_BEGIN
 
     using NStringMap = std::map<std::string, std::string>;
     using NStringDoubleMap = std::map<std::string, double>;
-    namespace opt = nonstd;
+    namespace opt = std;
 
     /// Constant for defaut port.
     /// This is not valid port, actual port will be selected automatically.
